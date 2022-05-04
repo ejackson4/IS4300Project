@@ -1,0 +1,137 @@
+---
+title: "Final Project for WVS Dataset"
+author: "Emma Jackson"
+date: '2022-05-04'
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+# Required Packages:
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org") # Needed for ggplot
+
+if(!require(ggthemes)) install.packages("ggthemes", repos = "http://cran.us.r-project.org") # Needed for themes for ggplots
+
+```
+
+# Introduction
+
+The *WVS* dataset contains information collected from the World Values Survey from 1995-1997 to ascertain people's view on the government's handling of poverty in their country. The dataset contains 6 variables and 5381 observations. 
+
+The variable of interest is poverty and has three levels and stores the user's answer to the question, "Do you think that what the government is doing for people in poverty in this country is about the right amount, too much, or too little?" 
+
+The other variables used in this report are more information on the user, religion, degree, country, age, and gender. These variables will be examined in our analysis section to see if there is a relationship with poverty. Below is a summary of our dataset: 
+```{r include= FALSE}
+urlfile <- "https://raw.githubusercontent.com/ejackson4/IS4300Project/main/WVS%20(2).csv"
+# Read World Values Survey data into R and name it w
+w <- read_csv(url(urlfile))
+w <- as.data.frame(w)
+w <- w %>% select(-...1) # removing ID column
+
+# Converting character datatypes to factors to increase visibility in summary function
+w$gender <- as.factor(w$gender)
+w$poverty <- as.factor(w$poverty)
+w$religion <- as.factor(w$religion)
+w$degree <- as.factor(w$degree)
+w$country <- as.factor(w$country)
+
+w <- w %>% mutate(ageCategories = case_when(age <=25 ~ "Gen Z", 
+                                            age >= 26 & age < 40 ~ "Millennial",
+                                            age >= 40 & age <= 56 ~ "Gen X",
+                                            age > 56 ~ "Baby Boomers")) # Creating categorical data to analyze variables with chi squared test.
+w$ageCategories <- as.factor(w$ageCategories)
+```
+
+``` {r echo = FALSE}
+summary(w) 
+```
+# Visualizations
+To determine the strongest relationship between poverty and the other variables, we first examine them visually to see if it is worth analyzing. This first graph depicts the relation between people's view on if their government is doing enough for poverty in their country. From this visual, we see the greatest disparity between countries in the "Too Much" column. 
+```{r echo = FALSE}
+mosaicplot(poverty ~ country, data = w, col = c("navy", "ivory", "gold", "firebrick"), 
+           main = "Poverty as viewed by Country", xlab = "Poverty", ylab = "Country")
+```
+
+The following graph examines the relationship of religion and views on the government's actions on poverty. This clearly shows the majority of people surveyed are religious.
+```{r echo = FALSE}
+wplot <- w %>% ggplot()
+
+wplot + geom_bar(aes(x = religion, fill = poverty), width = .4) + theme_minimal() +
+  labs(title = "View of poverty by religion")
+```
+This graph shows the proportion of those who were surveyed that hold a degree and their views on the government's involvement with poverty. Significantly more people do not hold degrees.
+```{r echo = FALSE}
+wplot + geom_bar(aes(x = degree, fill = poverty), width = .4) + theme_minimal() + 
+  labs(title ="View of poverty by degree")
+```
+Using our only numerical variable, age, we create a boxplot to view age against poverty and see if there is any relation or observations we can spot. Examining this graph, we see that people who selected, "Too Much" tended to have a older mean age while "Too Little" tended to have a younger mean age.
+```{r echo = FALSE}
+wplot + geom_boxplot(aes(age, poverty)) + theme_minimal() + labs(title = "View of poverty by age")
+```
+Lastly, this graph looks at males vs. females that were surveyed. It appears that slightly more females were surveyed and it also looks like females may have been more inclined to view the government as doing "Too little" to handle poverty. This will be especially interesting to test in our analysis section next. 
+```{r echo = FALSE}
+wplot + geom_bar(aes(x = gender, fill = poverty), width = .4) + theme_minimal() + 
+  labs(title = "View of poverty by gender")
+```
+
+# Analysis 
+After visualizing several variables against our variable of interest, poverty, we will now transition into our analysis. Given we were unable to clearly see relationships in our graphs,this section is especially important. With this dataset, it is mostly made up of categorical variables, making our options for analysis limited. 
+
+To return to our original function for this report, we are trying to decide if our variables are independent from poverty. To determine this, we will use a Chi-Squared Test. This test will be repeated with several of our variables. 
+
+## Analysis of poverty and country variables
+```{r echo = FALSE}
+table1 <- table(w$poverty, w$country)
+table1
+chisq.test(table1)
+
+```
+This result shows a very low p-value, significantly less than 0.05. This means we reject that the two variables of country and poverty are independent. You can see from our table that very few people from Norway and Sweden answered, "Too Much." 
+
+## Analysis of poverty and religion variables
+
+```{r echo = FALSE}
+table2 <- table(w$poverty, w$religion)
+table2
+chisq.test(table2)
+```
+After doing a test for the independence of religion and poverty, with a large p-value of .9593 we can conclude they do not have a significant relationship.  
+
+## Analysis of poverty and degree variables
+
+```{r echo = FALSE}
+
+table3 <- table(w$poverty, w$degree)
+table3
+chisq.test(table3)
+```
+The analysis of poverty and degree results in a p-value of .01221 and we reject that they are independent of one another. 
+
+## Analysis of poverty and gender variables
+
+```{r echo = FALSE}
+
+table4 <- table(w$poverty, w$gender)
+table4
+chisq.test(table4)
+```
+The analysis of poverty and gender results in a p-value of .002077 and we reject that they are independent of one another. 
+
+## Analysis of poverty and age variables
+
+```{r echo = FALSE}
+
+table5 <- table(w$poverty, w$ageCategories)
+chisq.test(table5)
+
+```
+To conduct a Chi-Squared test, we convert the numeric values in the age variable into four categories, Gen Z (age 18-25), Millennial (age 26-40), Gen X (age 40-56), and Baby Boomer (age 56 and above). The analysis of poverty and our age categories results in a very low p-value and we reject that they are independent of one another. 
+
+# Conclusion
+
+The results of our analysis reveal that the variables country, degree, gender, and age may have a relation to our variable of interest, poverty, with country and age having the most significant effect on it. 
+
+Further research would need to be done into the dataset to determine the exact effect country and age have on poverty. The next recommended step would be to gather more numerical data on the topic to analyze if country and age could be used to predict an individual's view on if their government is doing enough to handle the issue of poverty in their country. 
